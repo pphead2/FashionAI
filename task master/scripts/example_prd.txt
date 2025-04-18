@@ -1,0 +1,454 @@
+<context>
+# Overview
+Fashion Finder AI is a web application that helps users identify and purchase clothing items and accessories from outfit images. The platform serves both fashion-conscious individuals and those seeking style guidance by automatically detecting clothing items and finding similar products available for purchase. By leveraging AI for image recognition and integrating with Google's Shopping API, users can easily discover and shop for items that match their desired looks.
+
+# Core Features
+1. Image Upload and Analysis
+   - Users can upload images of complete outfits
+   - Google Vision API integration for automatic item detection
+   - Ability to select specific items or analyze entire outfit
+   - Detection covers clothing, shoes, bags, watches, jewelry, glasses, and belts
+
+2. Product Search and Recommendations
+   - Integration with Google Shopping API
+   - Display of similar items from various retailers
+   - Price range filtering capabilities
+   - Multiple alternative options for each detected item
+   - Direct purchase links to retailer websites
+
+3. User Account System
+   - Secure user registration and authentication
+   - Google OAuth integration for social login
+   - Basic admin panel for account management and analytics
+   - Save favorite items functionality
+   - View history of searches and saved items
+   - Personal profile management
+   - Click tracking for shopping conversions
+
+4. Caching System
+   - Store previous search results
+   - Optimize performance and reduce API calls
+   - Cache management for frequently searched items
+
+# User Experience
+## User Personas
+1. Fashion Enthusiast
+   - Actively follows fashion trends
+   - Regularly shops online
+   - Looks for specific items they've seen in photos
+
+2. Style Seeker
+   - Less confident about fashion choices
+   - Needs guidance in putting together outfits
+   - Wants to replicate complete looks they like
+
+## Key User Flows
+1. Outfit Analysis Flow
+   - Upload outfit image
+   - Review detected items
+   - Select items of interest
+   - View shopping options
+   - Filter by price range
+   - Save favorites or proceed to purchase
+
+2. Account Management Flow
+   - Register/Login
+   - View saved items
+   - Manage profile settings
+   - Access search history
+</context>
+<PRD>
+# Technical Architecture
+## Backend Components (Python)
+1. Core API Service
+   - FastAPI framework for RESTful API
+   - JWT authentication with Google OAuth support
+   - Basic admin panel with analytics dashboard:
+     * User metrics (total users, active users)
+     * Search metrics (total searches, searches per user)
+     * Conversion tracking (shop button clicks)
+     * Usage trends and patterns
+   - Request validation and error handling
+   - API rate limiting and security measures
+
+2. Image Processing Service
+   - Google Vision AI integration
+   - Image validation and restrictions:
+     * Max file size: 10MB
+     * Formats: JPEG, PNG, WebP
+     * Min dimensions: 800x800px
+     * Max dimensions: 4000x4000px
+   - Image cropping and editing interface
+   - Advanced Item Detection System:
+     * Multi-modal detection approach:
+       - Vision AI for initial item detection and classification
+       - Object segmentation for precise item boundary detection
+       - Automatic cropping of individual items
+     * Attribute extraction:
+       - Basic attributes (type, color, category)
+       - Pattern detection (solid, striped, floral, etc.)
+       - Style classification (formal, casual, etc.)
+       - Brand detection from logos
+     * Detection Examples:
+       - Complex Patterns:
+         * Floral dress with multiple colors
+         * Plaid shirt with specific pattern spacing
+         * Textured sweater with unique knit pattern
+       - Layered Items:
+         * Jacket over t-shirt
+         * Dress with belt
+         * Layered necklaces
+       - Distinctive Features:
+         * Asymmetrical hemlines
+         * Unique collar designs
+         * Special button arrangements
+     * Quality assurance:
+       - Confidence scoring for detections
+       - Manual adjustment options for users
+       - Boundary refinement tools
+
+3. Product Search Service
+   - Dynamic Search Weight Distribution:
+     * Category-Based Weighting:
+       - Patterned Items:
+         * Visual: 70-80%
+         * Attribute: 20-30%
+         * Example: Floral dresses, plaid shirts
+       
+       - Basic Items:
+         * Visual: 40-50%
+         * Attribute: 50-60%
+         * Example: Plain t-shirts, solid color pants
+       
+       - Designer/Luxury Items:
+         * Visual: 75-85%
+         * Attribute: 15-25%
+         * Example: Designer bags, branded shoes
+       
+       - Accessories:
+         * Visual: 65-75%
+         * Attribute: 25-35%
+         * Example: Jewelry, watches
+
+     * Adaptive Learning:
+       - Click-through analysis
+       - Success rate tracking per category
+       - Automatic weight adjustment based on:
+         * User interaction data
+         * Conversion rates
+         * Search result accuracy
+       - A/B testing different weight distributions
+
+     * Initial Weight Assignment:
+       - Item classification using Vision AI
+       - Pattern complexity scoring
+       - Brand detection confidence
+       - Category-based default weights
+       - Real-time adjustment based on:
+         * Image quality
+         * Detection confidence
+         * Pattern complexity score
+
+   - Hybrid Search System:
+     * Visual Search:
+       - Google Lens API integration for image-based search
+       - Cropped item image search with smart boundary expansion
+       - Pattern and texture matching using computer vision
+       - Similar style detection using ML models
+     * Attribute-based Search:
+       - Text-based search using detected attributes
+       - Category and style filtering
+       - Color and pattern matching
+     * Combined Results:
+       - Dynamic weight assignment based on item category
+       - Additional boosting factors:
+         * Price relevance (±10%)
+         * Availability (+5%)
+         * Brand match (+10%)
+         * Historical success rate (+/-5%)
+
+   - Search Examples:
+     * Case 1: Patterned Dress
+       - Visual Search:
+         * Matches floral pattern density
+         * Identifies dress silhouette
+         * Detects color arrangement
+       - Attribute Search:
+         * "Floral maxi dress"
+         * "V-neck summer dress"
+         * "Multi-colored pattern"
+       - Combined Results:
+         * Prioritizes exact pattern matches
+         * Falls back to similar patterns
+         * Maintains silhouette consistency
+
+     * Case 2: Designer Handbag
+       - Visual Search:
+         * Matches specific brand details
+         * Identifies hardware elements
+         * Detects leather texture
+       - Attribute Search:
+         * "Designer name shoulder bag"
+         * "Gold hardware leather bag"
+         * "Specific model name"
+       - Combined Results:
+         * Prioritizes exact brand matches
+         * Includes similar designer styles
+         * Considers price range relevance
+
+     * Case 3: Unique Jewelry
+       - Visual Search:
+         * Matches gemstone arrangement
+         * Identifies metal type
+         * Detects specific design elements
+       - Attribute Search:
+         * "Multi-stone necklace"
+         * "Yellow gold pendant"
+         * "Geometric design"
+       - Combined Results:
+         * Prioritizes similar designs
+         * Includes alternative styles
+         * Considers price point
+
+   - Result Refinement:
+     * Primary Filters:
+       - Visual similarity score (0-100)
+       - Attribute match percentage
+       - Price range alignment
+     * Secondary Filters:
+       - Brand relevance
+       - Retailer reliability
+       - Stock availability
+     * User Preference Adjustments:
+       - Price sensitivity
+       - Brand preference
+       - Style priority
+
+4. Data Layer
+   - MongoDB database
+   - User data management
+   - Favorites storage
+   - Search history tracking
+   - Analytics collections:
+     * User activity logs
+     * Search event tracking
+     * Shopping click-through tracking
+     * Daily/weekly/monthly aggregations
+   - Redis for caching
+
+## Frontend Components
+1. React.js Application
+   - Modern, responsive design
+   - Material-UI component library
+   - State management with Redux
+   - Progressive Web App capabilities
+
+## Infrastructure
+1. Google Cloud Platform Services
+   - Cloud Run for application hosting (serverless)
+   - Cloud Storage for image storage
+   - Cloud CDN for content delivery
+   - Cloud DNS for domain management
+   - Cloud Load Balancing
+   - Cloud MongoDB Atlas for database
+   - Memorystore (Redis) for caching
+   - Cloud Monitoring for system metrics
+   - Cloud Logging for application logs
+   - Cloud Vision AI for image processing
+   - Google Shopping API for product search
+
+# Development Roadmap
+## Phase 1: MVP
+1. Core Image Upload and Analysis
+   - Basic image upload functionality with size/format validation
+   - Image cropping interface
+   - Initial implementation of hybrid detection:
+     * Basic Vision AI detection
+     * Simple object segmentation
+     * Manual crop adjustment tools
+   - Basic attribute extraction:
+     * Item type
+     * Primary colors
+     * Basic patterns
+
+2. Product Search
+   - Initial hybrid search implementation:
+     * Basic visual search using Google Lens
+     * Simple attribute-based search
+     * Basic result merging
+   - Essential filtering:
+     * Price ranges
+     * Basic categories
+   - Simple result ranking:
+     * Visual similarity
+     * Price relevance
+
+3. User System
+   - Google OAuth integration
+   - Basic authentication
+   - Simple admin panel with:
+     * Account management
+     * Basic analytics dashboard
+     * User activity monitoring
+     * Search metrics tracking
+     * Shopping conversion tracking
+   - User profile creation
+   - Favorite items functionality
+
+4. Basic UI/UX
+   - Responsive design
+   - Essential pages and navigation
+   - Image upload interface
+   - Search results display
+
+## Phase 2: Enhancement
+1. Advanced Features
+   - Enhanced detection accuracy:
+     * Improved boundary detection
+     * Advanced pattern recognition
+     * Style classification
+     * Brand detection
+   - Advanced search capabilities:
+     * Refined visual similarity matching
+     * Complex pattern matching
+     * Style-based recommendations
+   - Improved result ranking:
+     * Machine learning-based ranking
+     * User preference consideration
+     * Popularity metrics
+
+2. Performance Optimization
+   - Caching implementation
+   - API response optimization
+   - Image processing improvements
+
+3. UI/UX Improvements
+   - Enhanced user interface
+   - Better results presentation
+   - Improved navigation
+   - Loading states and animations
+
+## Future Phases
+1. AI Try-On Feature
+   - Virtual fitting room
+   - Personal avatar creation
+   - Outfit visualization
+
+2. Social Features
+   - Outfit sharing
+   - User collections
+   - Community features
+
+# Logical Dependency Chain
+1. Foundation (Week 1-2)
+   - Backend API setup
+   - Database configuration
+   - Authentication system
+   - Basic frontend structure
+
+2. Core Features (Week 3-4)
+   - Image upload and processing
+   - Google Vision AI integration
+   - Basic product search
+   - Essential UI components
+
+3. User Features (Week 5-6)
+   - User profiles
+   - Favorites system
+   - Search results display
+   - Price filtering
+
+4. Enhancement (Week 7-8)
+   - Caching implementation
+   - Performance optimization
+   - UI/UX improvements
+   - Testing and refinement
+
+# Risks and Mitigations
+## Technical Risks
+1. API Limitations
+   - Risk: Google API rate limits and costs
+   - Mitigation: Implement caching and request optimization
+
+2. Image Processing Accuracy
+   - Risk: Incorrect item detection
+   - Mitigation: Allow manual selection and correction
+
+3. Performance
+   - Risk: Slow search results
+   - Mitigation: Efficient caching and optimization
+
+## Business Risks
+1. User Adoption
+   - Risk: Low user engagement
+   - Mitigation: Focus on core features and usability
+
+2. Competition
+   - Risk: Similar services in market
+   - Mitigation: Unique features and better UX
+
+# Appendix
+## API Documentation
+1. Google Vision AI
+   - Documentation links
+   - Usage examples
+   - Best practices
+
+2. Google Shopping API
+   - Integration guidelines
+   - Search parameters
+   - Response handling
+
+## Technical Requirements
+1. Development Environment
+   - Python 3.9+
+   - Node.js 16+
+   - MongoDB 5.0+
+   - Redis 6.0+
+
+2. External Services
+   - Google Cloud Platform (primary cloud platform)
+     * Cloud Run
+     * Cloud Storage
+     * Vision AI
+     * Shopping API
+     * Cloud Monitoring
+   - Google OAuth
+   - MongoDB Atlas
+   - Memorystore
+
+3. Image Processing Requirements
+   - Maximum file size: 10MB
+   - Supported formats: JPEG, PNG, WebP
+   - Minimum dimensions: 800x800 pixels
+   - Maximum dimensions: 4000x4000 pixels
+   - Aspect ratio preservation during cropping
+
+## Data Schema
+1. Analytics Events
+   - User Events:
+     * Registration
+     * Login/logout
+     * Profile updates
+   - Search Events:
+     * Image uploads
+     * Item detections
+     * Search queries
+     * Results displayed
+   - Shopping Events:
+     * Item clicks
+     * Retailer redirects
+     * Price points tracked
+   - Aggregated Metrics:
+     * Daily active users
+     * Searches per user
+     * Click-through rates
+     * Conversion tracking
+
+2. Monitoring Requirements
+   - Real-time user activity tracking
+   - Search performance metrics
+   - Shopping conversion tracking
+   - API usage monitoring
+   - System performance metrics
+</PRD>
